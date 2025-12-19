@@ -3,7 +3,8 @@ const allowedDomains = [
     "ihaveadeen.onlinecoursehost.com",
     "deenvertissement.fr",
     "127.0.0.1",
-    "localhost"
+    "localhost",
+    "github.io"
 ];
 
 // --- VARIABLES DU JEU ---
@@ -11,7 +12,13 @@ let questions = [];
 let currentIndex = 0;
 let score = 0;
 
-// --- DÉMARRAGE ET SÉCURITÉ ---
+// Variables pour le tactile (SWIPE)
+let startX = 0;
+let currentX = 0;
+let isDragging = false;
+const cardZone = document.getElementById('card-zone');
+
+// --- DÉMARRAGE ---
 document.addEventListener("DOMContentLoaded", () => {
     checkSecurity();
 });
@@ -20,10 +27,8 @@ function checkSecurity() {
     const referrer = document.referrer;
     const hostname = window.location.hostname;
     
-    // Bypass en local pour vos tests
-    if (hostname === "127.0.0.1" || hostname === "localhost" || hostname.includes("github.io")) {
-        // NOTE: J'ai ajouté github.io pour que vous puissiez tester le jeu une fois uploadé
-        // Pour une sécurité militaire, on retirera "github.io" plus tard si vous voulez.
+    // Bypass local + GitHub
+    if (hostname.includes("127.0.0.1") || hostname.includes("localhost") || hostname.includes("github.io")) {
         initGame();
         return;
     }
@@ -40,23 +45,19 @@ function checkSecurity() {
     }
 }
 
-// --- CHARGEMENT DES DONNÉES ---
+// --- CHARGEMENT ---
 async function initGame() {
     try {
         const response = await fetch('data.json');
         questions = await response.json();
-        
-        // Si données chargées, on affiche le jeu
         document.getElementById('game-app').classList.remove('hidden');
         renderCard();
     } catch (error) {
-        console.error("Erreur chargement data:", error);
-        document.getElementById('game-interface').innerHTML = "<h1>Erreur de chargement des questions.</h1>";
-        document.getElementById('game-app').classList.remove('hidden');
+        console.error("Erreur data:", error);
     }
 }
 
-// --- MOTEUR DE JEU ---
+// --- AFFICHAGE CARTE ---
 function renderCard() {
     if (currentIndex >= questions.length) {
         showVictory();
@@ -67,44 +68,115 @@ function renderCard() {
     const cardText = document.getElementById('card-text');
     const progressBar = document.getElementById('progress');
     
-    // Mise à jour interface
     cardText.textContent = q.question;
     
-    // Calcul pourcentage barre
     const percent = (currentIndex / questions.length) * 100;
     progressBar.style.width = percent + "%";
 
-    // Reset visuel carte (si elle avait bougé)
+    // Reset position carte
     const card = document.getElementById('current-card');
     card.style.transform = "translate(0px, 0px) rotate(0deg)";
+    card.style.transition = "transform 0.3s ease"; // Remet l'animation douce
     document.querySelector('.stamp-vrai').style.opacity = 0;
     document.querySelector('.stamp-faux').style.opacity = 0;
+
+    // --- RE-ACTIVER LE TACTILE ---
+    addTouchPhysics(card);
 }
 
-// Action du joueur (Boutons ou Swipe)
+// --- PHYSIQUE DU SWIPE (C'est ce qui manquait !) ---
+function addTouchPhysics(card) {
+    // Souris
+    card.addEventListener('mousedown', startDrag);
+    document.addEventListener('mousemove', drag);
+    document.addEventListener('mouseup', endDrag);
+    
+    // Doigt (Mobile)
+    card.addEventListener('touchstart', startDrag);
+    document.addEventListener('touchmove', drag);
+    document.addEventListener('touchend', endDrag);
+}
+
+function startDrag(e) {
+    if(e.target.closest('.btn')) return; // Ignore si on clique sur un bouton
+    isDragging = true;
+    startX = getClientX(e);
+    const card = document.getElementById('current-card');
+    card.style.transition = "none"; // Enlève le délai pour que ça colle au doigt
+}
+
+function drag(e) {
+    if (!isDragging) return;
+    e.preventDefault(); // Empêche le scroll de la page
+
+    currentX = getClientX(e);
+    const diffX = currentX - startX;
+    const rotate = diffX * 0.1; // Légère rotation
+    
+    const card = document.getElementById('current-card');
+    card.style.transform = `translate(${diffX}px, 0px) rotate(${rotate}deg)`;
+
+    // Gestion des tampons VRAI/FAUX visuels
+    const stampVrai = document.querySelector('.stamp-vrai');
+    const stampFaux = document.querySelector('.stamp-faux');
+
+    if (diffX > 50) {
+        stampVrai.style.opacity = Math.min(diffX / 100, 1);
+        stampFaux.style.opacity = 0;
+    } else if (diffX < -50) {
+        stampFaux.style.opacity = Math.min(Math.abs(diffX) / 100, 1);
+        stampVrai.style.opacity = 0;
+    } else {
+        stampVrai.style.opacity = 0;
+        stampFaux.style.opacity = 0;
+    }
+}
+
+function endDrag(e) {
+    if (!isDragging) return;
+    isDragging = false;
+    const card = document.getElementById('current-card');
+    const diffX = currentX - startX;
+
+    // Seuil de validation (100px)
+    if (diffX > 100) {
+        triggerSwipe('right');
+    } else if (diffX < -100) {
+        triggerSwipe('left');
+    } else {
+        // Retour au centre si pas assez glissé
+        card.style.transition = "transform 0.3s ease";
+        card.style.transform = "translate(0px, 0px) rotate(0deg)";
+        document.querySelector('.stamp-vrai').style.opacity = 0;
+        document.querySelector('.stamp-faux').style.opacity = 0;
+    }
+}
+
+function getClientX(e) {
+    return e.type.includes('mouse') ? e.clientX : e.touches[0].clientX;
+}
+
+// --- LOGIQUE DE VALIDATION ---
 function triggerSwipe(direction) {
     const card = document.getElementById('current-card');
-    const moveX = direction === 'right' ? 500 : -500;
+    const moveX = direction === 'right' ? 1000 : -1000;
     const rotate = direction === 'right' ? 30 : -30;
 
-    // Animation de sortie
     card.style.transition = "transform 0.5s ease";
     card.style.transform = `translate(${moveX}px, 0px) rotate(${rotate}deg)`;
 
-    // Vérification réponse après un petit délai
     setTimeout(() => {
         checkAnswer(direction === 'right');
     }, 300);
 }
 
-function checkAnswer(userReponseBoolean) { // True = a glissé à droite
+function checkAnswer(userReponseBoolean) { 
     const q = questions[currentIndex];
     const isCorrect = (userReponseBoolean === q.reponse_correcte);
-
     showFeedback(isCorrect, q.explication);
 }
 
-// --- POPUPS & ANIMATIONS ---
+// --- FEEDBACK ---
 function showFeedback(isCorrect, textExplication) {
     const overlay = document.getElementById('feedback-overlay');
     const title = document.getElementById('feedback-title');
@@ -116,14 +188,14 @@ function showFeedback(isCorrect, textExplication) {
     if (isCorrect) {
         title.textContent = "Bien joué !";
         title.style.color = "#4CAF50";
-        msg.textContent = textExplication || "C'est la bonne réponse.";
-        anim.load('./assets/succes.json'); // Charge l'anim Succès
+        msg.textContent = textExplication;
+        anim.load('./assets/succes.json'); 
         score++;
     } else {
         title.textContent = "Oups...";
         title.style.color = "#F44336";
-        msg.textContent = textExplication || "Ce n'est pas ça.";
-        anim.load('./assets/echec.json'); // Charge l'anim Echec
+        msg.textContent = textExplication;
+        anim.load('./assets/echec.json'); 
     }
 }
 
