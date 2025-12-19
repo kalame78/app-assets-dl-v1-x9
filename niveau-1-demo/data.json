@@ -1,0 +1,23 @@
+[
+  {
+    "id": 1,
+    "question": "Le Prophète (sws) est né à la Mecque.",
+    "reponse_correcte": true,
+    "explication": "Exact ! Il est né à la Mecque en l'an 570 (l'année de l'Éléphant).",
+    "image": ""
+  },
+  {
+    "id": 2,
+    "question": "Sa mère s'appelait Halima.",
+    "reponse_correcte": false,
+    "explication": "Faux. Sa mère s'appelait Amina. Halima était sa nourrice de la tribu des Banu Sa'ad.",
+    "image": ""
+  },
+  {
+    "id": 3,
+    "question": "Son grand-père Abdelmuttalib l'a élevé après la mort de sa mère.",
+    "reponse_correcte": true,
+    "explication": "Vrai. Son grand-père l'a pris en charge avec beaucoup d'amour jusqu'à ses 8 ans.",
+    "image": ""
+  }
+]

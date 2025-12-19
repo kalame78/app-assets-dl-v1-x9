@@ -2,20 +2,217 @@
 <html lang="fr">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Sira Lingo - Niveau 1</title>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;700;900&display=swap" rel="stylesheet">
+    <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
+
     <style>
-        body { font-family: sans-serif; text-align: center; margin-top: 50px; }
-        .hidden { display: none; }
-        #game-container { background-color: #f0f0f0; padding: 20px; border-radius: 10px; display: inline-block; }
+        /* --- DESIGN GÉNÉRAL --- */
+        body {
+            font-family: 'Nunito', sans-serif;
+            background-color: #f4f7f6;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden; /* Empêche le scroll élastique sur mobile */
+            -webkit-user-select: none; /* Empêche la sélection de texte */
+            user-select: none;
+        }
+
+        /* La boîte cachée par défaut (Sécurité) */
+        .hidden { display: none !important; }
+
+        /* Conteneur principal du jeu */
+        #game-interface {
+            width: 100%;
+            max-width: 400px;
+            height: 100%;
+            position: relative;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        /* --- BARRE DU HAUT (PROGRESSION) --- */
+        header {
+            width: 90%;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-top: 10px;
+        }
+        .progress-bar {
+            flex-grow: 1;
+            height: 10px;
+            background: #e0e0e0;
+            border-radius: 20px;
+            margin: 0 10px;
+            overflow: hidden;
+        }
+        .progress-fill {
+            height: 100%;
+            background: #4CAF50;
+            width: 0%;
+            transition: width 0.5s ease;
+        }
+        .mascotte-mini {
+            width: 50px;
+            height: 50px;
+        }
+
+        /* --- ZONE DES CARTES (SWIPE) --- */
+        #card-zone {
+            flex-grow: 1;
+            width: 90%;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            perspective: 1000px;
+        }
+
+        .card {
+            background: white;
+            width: 100%;
+            max-width: 340px;
+            height: 450px;
+            border-radius: 20px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            position: absolute;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+            text-align: center;
+            transition: transform 0.3s ease;
+            cursor: grab;
+        }
+
+        .card h2 {
+            font-size: 1.4rem;
+            color: #333;
+            margin-top: 20px;
+            margin-bottom: 20px;
+        }
+
+        .card-img {
+            max-height: 200px;
+            margin-bottom: 20px;
+            border-radius: 10px;
+        }
+
+        /* Indicateurs VRAI / FAUX sur la carte quand on glisse */
+        .stamp {
+            position: absolute;
+            top: 40px;
+            padding: 5px 10px;
+            border: 3px solid;
+            border-radius: 5px;
+            font-size: 20px;
+            font-weight: 900;
+            text-transform: uppercase;
+            opacity: 0; /* Invisible par défaut */
+        }
+        .stamp-vrai { border-color: #4CAF50; color: #4CAF50; right: 40px; transform: rotate(15deg); }
+        .stamp-faux { border-color: #F44336; color: #F44336; left: 40px; transform: rotate(-15deg); }
+
+        /* --- BOUTONS (Pour ceux qui ne swipent pas) --- */
+        .controls {
+            width: 100%;
+            display: flex;
+            justify-content: space-evenly;
+            margin-bottom: 30px;
+        }
+        .btn {
+            width: 70px;
+            height: 70px;
+            border-radius: 50%;
+            border: none;
+            font-size: 30px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            transition: transform 0.1s;
+        }
+        .btn:active { transform: scale(0.9); }
+        .btn-false { background: #ffebee; color: #F44336; }
+        .btn-true { background: #e8f5e9; color: #4CAF50; }
+
+        /* --- POPUP FEEDBACK (BRAVO / ERREUR) --- */
+        #feedback-overlay {
+            position: absolute;
+            top: 0; left: 0; width: 100%; height: 100%;
+            background: rgba(255,255,255,0.95);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            z-index: 100;
+        }
+        #feedback-overlay h2 { font-size: 2rem; margin: 10px 0; }
+        #feedback-overlay p { font-size: 1.2rem; color: #555; padding: 0 20px; text-align: center; }
+        .next-btn {
+            background: #333; color: white; border: none;
+            padding: 10px 30px; border-radius: 50px;
+            font-size: 1.2rem; margin-top: 20px; cursor: pointer;
+        }
+
+        /* --- ÉCRAN DE VICTOIRE --- */
+        #victory-screen {
+            text-align: center;
+        }
     </style>
 </head>
 <body>
-    <div id="game-container" class="hidden">
-        <h1>🎮 NIVEAU 1 : DÉMO</h1>
-        <p>Bravo ! Si tu vois ça, c'est que la sécurité fonctionne.</p>
-        <div id="lottie-zone"></div>
+
+    <div id="game-app" class="hidden">
+        <div id="game-interface">
+            
+            <header>
+                <div class="mascotte-mini">
+                    <lottie-player src="./assets/mascotte.json" background="transparent" speed="1" style="width: 50px; height: 50px;" loop autoplay></lottie-player>
+                </div>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progress"></div>
+                </div>
+                <div style="font-weight:bold; color:#888;">Niv.1</div>
+            </header>
+
+            <div id="card-zone">
+                <div class="card" id="current-card">
+                    <div class="stamp stamp-faux">FAUX</div>
+                    <div class="stamp stamp-vrai">VRAI</div>
+                    <h2 id="card-text">Chargement...</h2>
+                </div>
+            </div>
+
+            <div class="controls">
+                <button class="btn btn-false" onclick="triggerSwipe('left')">❌</button>
+                <button class="btn btn-true" onclick="triggerSwipe('right')">✅</button>
+            </div>
+
+        </div>
+
+        <div id="feedback-overlay" class="hidden">
+            <lottie-player id="feedback-anim" src="" background="transparent" speed="1" style="width: 150px; height: 150px;" autoplay></lottie-player>
+            <h2 id="feedback-title">Bravo !</h2>
+            <p id="feedback-msg">Explication...</p>
+            <button class="next-btn" onclick="nextCard()">Continuer</button>
+        </div>
+
+        <div id="victory-screen" class="hidden">
+            <lottie-player src="./assets/victoire.json" background="transparent" speed="1" style="width: 300px; height: 300px;" loop autoplay></lottie-player>
+            <h1>Niveau Terminé !</h1>
+            <p>Tu as maîtrisé ce chapitre de la Sira.</p>
+            <button class="next-btn" onclick="location.reload()">Rejouer</button>
+        </div>
     </div>
+
     <script src="app.js"></script>
 </body>
 </html>
