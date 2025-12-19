@@ -8,10 +8,11 @@
     <script src="https://unpkg.com/@lottiefiles/lottie-player@latest/dist/lottie-player.js"></script>
 
     <style>
-        /* --- DESIGN GÉNÉRAL --- */
+        /* --- DESIGN GÉNÉRAL (FOND D'ÉCRAN) --- */
         body {
             font-family: 'Nunito', sans-serif;
-            background-color: #f4f7f6;
+            /* Joli dégradé Vert d'eau (Thème Islam/Sira apaisant) */
+            background: linear-gradient(135deg, #e0f2f1 0%, #80cbc4 100%);
             margin: 0;
             display: flex;
             flex-direction: column;
@@ -29,7 +30,7 @@
         /* Conteneur principal du jeu */
         #game-interface {
             width: 100%;
-            max-width: 400px;
+            max-width: 420px;
             height: 100%;
             position: relative;
             display: flex;
@@ -45,30 +46,34 @@
             align-items: center;
             justify-content: space-between;
             margin-top: 10px;
+            margin-bottom: 10px;
         }
         .progress-bar {
             flex-grow: 1;
-            height: 10px;
-            background: #e0e0e0;
+            height: 12px;
+            background: rgba(255, 255, 255, 0.5); /* Blanc transparent */
             border-radius: 20px;
-            margin: 0 10px;
+            margin: 0 15px;
             overflow: hidden;
+            border: 1px solid rgba(255, 255, 255, 0.8);
         }
         .progress-fill {
             height: 100%;
-            background: #4CAF50;
+            background: #26a69a; /* Vert Sira */
             width: 0%;
             transition: width 0.5s ease;
+            border-radius: 20px;
         }
         .mascotte-mini {
             width: 50px;
             height: 50px;
+            filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1));
         }
 
-        /* --- ZONE DES CARTES (SWIPE) --- */
+        /* --- ZONE DES CARTES (DESIGN PREMIUM) --- */
         #card-zone {
             flex-grow: 1;
-            width: 90%;
+            width: 100%;
             position: relative;
             display: flex;
             align-items: center;
@@ -77,12 +82,22 @@
         }
 
         .card {
-            background: white;
-            width: 100%;
-            max-width: 340px;
-            height: 450px;
-            border-radius: 20px;
-            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+            /* TEXTURE & COULEUR */
+            background: linear-gradient(to bottom, #ffffff, #f9fbfd);
+            border: 4px solid #ffffff; /* Gros contour blanc propre */
+            
+            /* TAILLE & FORME */
+            width: 90%; 
+            max-width: 360px; 
+            height: 540px; /* Assez haut pour l'image */
+            border-radius: 30px; /* Coins très arrondis (Style App Moderne) */
+            
+            /* EFFET 3D (Ombre portée "Flottante") */
+            box-shadow: 
+                0 20px 40px rgba(0,0,0,0.15), /* Grande ombre */
+                0 5px 15px rgba(0,0,0,0.05); /* Petite ombre détail */
+            
+            /* POSITIONNEMENT */
             position: absolute;
             display: flex;
             flex-direction: column;
@@ -92,56 +107,77 @@
             text-align: center;
             transition: transform 0.3s ease;
             cursor: grab;
+            overflow: hidden; 
+        }
+
+        .card:active {
+            cursor: grabbing;
         }
 
         .card h2 {
-            font-size: 1.4rem;
-            color: #333;
-            margin-top: 20px;
+            font-size: 1.3rem;
+            color: #2c3e50;
+            margin-top: 15px;
             margin-bottom: 20px;
+            line-height: 1.5;
+            font-weight: 800;
         }
 
+        /* Style de l'image ajoutée dynamiquement */
         .card-img {
-            max-height: 200px;
-            margin-bottom: 20px;
-            border-radius: 10px;
+            width: 100%;
+            height: 220px; /* Hauteur fixe pour l'image */
+            object-fit: cover;
+            border-radius: 20px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
+            margin-bottom: 10px;
+            pointer-events: none; /* Empêche de glisser juste l'image */
         }
 
         /* Indicateurs VRAI / FAUX sur la carte quand on glisse */
         .stamp {
             position: absolute;
-            top: 40px;
-            padding: 5px 10px;
-            border: 3px solid;
-            border-radius: 5px;
-            font-size: 20px;
+            top: 50px;
+            padding: 10px 20px;
+            border: 4px solid;
+            border-radius: 12px;
+            font-size: 24px;
             font-weight: 900;
             text-transform: uppercase;
+            letter-spacing: 2px;
             opacity: 0; /* Invisible par défaut */
+            z-index: 10;
+            background: rgba(255,255,255,0.8);
+            backdrop-filter: blur(2px);
         }
-        .stamp-vrai { border-color: #4CAF50; color: #4CAF50; right: 40px; transform: rotate(15deg); }
-        .stamp-faux { border-color: #F44336; color: #F44336; left: 40px; transform: rotate(-15deg); }
+        .stamp-vrai { border-color: #4CAF50; color: #4CAF50; right: 30px; transform: rotate(15deg); }
+        .stamp-faux { border-color: #F44336; color: #F44336; left: 30px; transform: rotate(-15deg); }
 
-        /* --- BOUTONS (Pour ceux qui ne swipent pas) --- */
+        /* --- BOUTONS BAS (DESIGN PREMIUM) --- */
         .controls {
             width: 100%;
             display: flex;
-            justify-content: space-evenly;
-            margin-bottom: 30px;
+            justify-content: center;
+            gap: 40px; /* Espace entre les boutons */
+            margin-bottom: 20px;
+            z-index: 5;
         }
         .btn {
-            width: 70px;
-            height: 70px;
+            width: 75px;
+            height: 75px;
             border-radius: 50%;
             border: none;
-            font-size: 30px;
+            font-size: 32px;
             cursor: pointer;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
-            transition: transform 0.1s;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.15);
+            transition: transform 0.1s, box-shadow 0.1s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-        .btn:active { transform: scale(0.9); }
-        .btn-false { background: #ffebee; color: #F44336; }
-        .btn-true { background: #e8f5e9; color: #4CAF50; }
+        .btn:active { transform: scale(0.9); box-shadow: 0 2px 5px rgba(0,0,0,0.1); }
+        .btn-false { background: #fff; color: #F44336; border: 2px solid #ffebee; }
+        .btn-true { background: #fff; color: #4CAF50; border: 2px solid #e8f5e9; }
 
         /* --- POPUP FEEDBACK (BRAVO / ERREUR) --- */
         #feedback-overlay {
@@ -153,18 +189,28 @@
             justify-content: center;
             align-items: center;
             z-index: 100;
+            backdrop-filter: blur(5px);
         }
-        #feedback-overlay h2 { font-size: 2rem; margin: 10px 0; }
-        #feedback-overlay p { font-size: 1.2rem; color: #555; padding: 0 20px; text-align: center; }
+        #feedback-overlay h2 { font-size: 2.2rem; margin: 10px 0; font-weight: 900; }
+        #feedback-overlay p { font-size: 1.3rem; color: #555; padding: 0 30px; text-align: center; line-height: 1.4; }
         .next-btn {
-            background: #333; color: white; border: none;
-            padding: 10px 30px; border-radius: 50px;
-            font-size: 1.2rem; margin-top: 20px; cursor: pointer;
+            background: #26a69a; color: white; border: none;
+            padding: 15px 40px; border-radius: 50px;
+            font-size: 1.2rem; margin-top: 30px; cursor: pointer;
+            font-weight: bold;
+            box-shadow: 0 10px 20px rgba(38, 166, 154, 0.3);
+            transition: transform 0.1s;
         }
+        .next-btn:active { transform: scale(0.95); }
 
         /* --- ÉCRAN DE VICTOIRE --- */
         #victory-screen {
             text-align: center;
+            background: rgba(255,255,255,0.9);
+            padding: 40px;
+            border-radius: 30px;
+            width: 80%;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.1);
         }
     </style>
 </head>
@@ -180,7 +226,7 @@
                 <div class="progress-bar">
                     <div class="progress-fill" id="progress"></div>
                 </div>
-                <div style="font-weight:bold; color:#888;">Niv.1</div>
+                <div style="font-weight:bold; color:white; text-shadow: 0 1px 2px rgba(0,0,0,0.2);">Niv.1</div>
             </header>
 
             <div id="card-zone">
@@ -199,16 +245,16 @@
         </div>
 
         <div id="feedback-overlay" class="hidden">
-            <lottie-player id="feedback-anim" src="" background="transparent" speed="1" style="width: 150px; height: 150px;" autoplay></lottie-player>
+            <lottie-player id="feedback-anim" src="" background="transparent" speed="1" style="width: 180px; height: 180px;" autoplay></lottie-player>
             <h2 id="feedback-title">Bravo !</h2>
             <p id="feedback-msg">Explication...</p>
             <button class="next-btn" onclick="nextCard()">Continuer</button>
         </div>
 
         <div id="victory-screen" class="hidden">
-            <lottie-player src="./assets/victoire.json" background="transparent" speed="1" style="width: 300px; height: 300px;" loop autoplay></lottie-player>
-            <h1>Niveau Terminé !</h1>
-            <p>Tu as maîtrisé ce chapitre de la Sira.</p>
+            <lottie-player src="./assets/victoire.json" background="transparent" speed="1" style="width: 250px; height: 250px;" loop autoplay></lottie-player>
+            <h1 style="color:#2c3e50;">Niveau Terminé !</h1>
+            <p style="color:#555;">Tu as maîtrisé ce chapitre de la Sira.</p>
             <button class="next-btn" onclick="location.reload()">Rejouer</button>
         </div>
     </div>
